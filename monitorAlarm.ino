@@ -6,7 +6,6 @@
 #define TXD2  17
 
 DFRobotDFPlayerMini myDFPlayer;
-void printDetail(uint8_t type, int value);
 
 const int statusLedPin = 18;
 const int callLedPin = 15;
@@ -29,7 +28,6 @@ double timeOfLastCall = 0;
 double timeOfLastBlink = 0;
 
 void setup() {
-  // put your setup code here, to run once:
   pinMode(statusLedPin, OUTPUT);
   pinMode(callLedPin, OUTPUT);
   pinMode(batteryLedPin, OUTPUT);
@@ -48,8 +46,6 @@ void setup() {
   
 
   Serial.println();
-  Serial.println(F("DFRobot DFPlayer Mini Demo"));
-  Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
 
   if (!myDFPlayer.begin(Serial2)) { 
     Serial.println(F("Unable to begin:"));
@@ -62,17 +58,22 @@ void setup() {
   }
   Serial.println(F("DFPlayer Mini online."));
 
+  //Enter delay programming mode by pressing dismiss button on startup
   if(digitalRead(dismissPin) == LOW)
   {
     int buttonPresses = 1;
     boolean exit = false;
 
     beep(1);
+
+    //Wait until user has released button
     while(true)
     {
       if(digitalRead(dismissPin) == HIGH)
         break;
     }
+
+    //Start timer. After 3000ms of not pressing the button, exit the programming mode
     double timeElapsed = millis();
 
     while(!exit)
@@ -113,7 +114,7 @@ void setup() {
         exit = true;
       }
     }
-    beep(buttonPresses);
+    beep(buttonPresses); //Confirm the emergency time
 
   }
 
@@ -162,8 +163,6 @@ void loop()
     Serial.println("Called");
     called = true;
     timeOfLastCall = millis();
-    //Serial.println(digitalRead(callPin));
-    //while()
   }
 
   else if(digitalRead(callPin) == LOW && called && !emergency)
@@ -177,7 +176,7 @@ void loop()
     }
   }
 
-  //Emergency stage 1
+  //Emergency stage 1 - plays emergency tone on speaker
   if(called && (millis() - timeOfLastCall)>emergencyTime1 && !emergency)
   {
     myDFPlayer.loop(2);
@@ -185,7 +184,7 @@ void loop()
     emergencyStageTime = millis();
   }
 
-  //Emergency stage 2
+  //Emergency stage 2 - activates sirens 
   if(called && emergency && (millis() - emergencyStageTime)>emergencyTime2)
   {
     digitalWrite(sirenPin, HIGH);
@@ -201,68 +200,6 @@ void loop()
     digitalWrite(callLedPin, LOW);
     digitalWrite(sirenPin, LOW);
   }
-}
-
-void printDetail(uint8_t type, int value){
-  switch (type) {
-    case TimeOut:
-      Serial.println(F("Time Out!"));
-      break;
-    case WrongStack:
-      Serial.println(F("Stack Wrong!"));
-      break;
-    case DFPlayerCardInserted:
-      Serial.println(F("Card Inserted!"));
-      break;
-    case DFPlayerCardRemoved:
-      Serial.println(F("Card Removed!"));
-      break;
-    case DFPlayerCardOnline:
-      Serial.println(F("Card Online!"));
-      break;
-    case DFPlayerUSBInserted:
-      Serial.println("USB Inserted!");
-      break;
-    case DFPlayerUSBRemoved:
-      Serial.println("USB Removed!");
-      break;
-    case DFPlayerPlayFinished:
-      Serial.print(F("Number:"));
-      Serial.print(value);
-      Serial.println(F(" Play Finished!"));
-      break;
-    case DFPlayerError:
-      Serial.print(F("DFPlayerError:"));
-      switch (value) {
-        case Busy:
-          Serial.println(F("Card not found"));
-          break;
-        case Sleeping:
-          Serial.println(F("Sleeping"));
-          break;
-        case SerialWrongStack:
-          Serial.println(F("Get Wrong Stack"));
-          break;
-        case CheckSumNotMatch:
-          Serial.println(F("Check Sum Not Match"));
-          break;
-        case FileIndexOut:
-          Serial.println(F("File Index Out of Bound"));
-          break;
-        case FileMismatch:
-          Serial.println(F("Cannot Find File"));
-          break;
-        case Advertise:
-          Serial.println(F("In Advertise"));
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
-  }
-  
 }
 
 void errorMode(int errMode, String errMsg)
